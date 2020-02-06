@@ -6,6 +6,9 @@ library(rintrojs)
 assessr <- function(abstract_filename = 
                       "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx") {
   
+  workshop_path <- "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx"
+  talk_path <- "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx"  
+  
   abstract_table <- readxl::read_excel(abstract_filename)
   
   preselected_cols <- c("Id",
@@ -39,6 +42,13 @@ assessr <- function(abstract_filename =
       shinydashboard::menuItem(
         text = "Sessions Settings", icon = icon("cog"),
         startExpanded = TRUE,
+        selectInput(
+          inputId = "submissionType",
+          label = "Type of contribution",
+          choices = c("Workshops", "Talks and other sessions"),
+          selected =  "Workshop", 
+          multiple = FALSE
+        ),
         selectInput(
           inputId = "cols_abstract",
           label = "Columns to display",
