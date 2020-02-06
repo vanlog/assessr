@@ -4,6 +4,31 @@ library(clipr)
 library(rintrojs)
 
 
+workshop_form <- function(id) {
+  paste0("https://docs.google.com/forms/d/e/1FAIpQLScTMLTJ1ccfBmjdEPhZfk5CyQwqSAW5AUJyDkFxc7Q9ZW6VPQ/viewform?usp=pp_url&entry.840333480=",
+         id)
+}
+
+contribution_form <- function(id) {
+  paste0("https://docs.google.com/forms/d/e/1FAIpQLSezGbJ1JmgOwDI5BLl28gXp3YQfoFXq8GoMon3k9PZcePCF_w/viewform?usp=pp_url&entry.840333480=",
+         id)
+}
+window_open <- function(form_link) {
+  paste0("window.open('", form_link, "', '_blank')")
+}
+
+
+window_open_erum <- function(id, type) {
+  if (type == "workshop") {
+    link <- workshop_form(id)
+  } else if (type == "contribution") {
+    link <- contribution_form(id)
+  }
+  
+  window_open(link)
+}
+
+
 
   workshop_path <- "./erum2020_sessions_allcontribs_fullinfo_onlyWorkshops.xlsx"
   contribution_path <- "./erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx"
@@ -99,7 +124,7 @@ library(rintrojs)
   
   # Server definition -------------------------------------------------------
   assessr_server <- function(input, output, session) {
-
+    
     
     
     abstract_table <- reactive({
@@ -115,9 +140,9 @@ library(rintrojs)
     current_dt <- reactive({
       
       mydt <- abstract_table()[abstract_table()$Reviewer1 %in% input$reviewer |
-                               abstract_table()$Reviewer2 %in% input$reviewer |
-                              "All" %in% input$reviewer,
-                             input$cols_abstract]
+                                 abstract_table()$Reviewer2 %in% input$reviewer |
+                                 "All" %in% input$reviewer,
+                               input$cols_abstract]
       return(mydt)
     })
     
@@ -136,7 +161,23 @@ library(rintrojs)
       this_link <- this_submission$Link
       this_firsttime <- this_submission$`First time presenting this?`
       this_notes <- this_submission$`Speaker Notes`
-
+      
+      
+      # form_id:
+      s <- input$DT_abstracts_rows_selected
+      if(length(s) == 0)
+        return(NULL)
+      
+      this_submission <- abstract_table()[s, ]
+      this_id <- this_submission$Id
+      this_title <- this_submission$Title
+      
+      form_id <- paste(this_id, this_title, sep = "|")
+      
+      message("type: ", input$submissionType)
+      message("form_id(): ", form_id)
+      message("open link string: ", open_link_string)
+      
       return(
         tagList(
           h3("Title: "),
@@ -161,7 +202,7 @@ library(rintrojs)
           shiny::actionButton(
             inputId = "launch_gform", label = "Open the Google Form to insert your evaluation", 
             icon = icon("database"), 
-            onclick ="window.open('TODOTODO_LINK', '_blank')",
+            onclick =window_open_erum(form_id, input$submissionType),
             class = "btn-success"
           )
         )
@@ -184,25 +225,6 @@ library(rintrojs)
       )
     })
     
-    observeEvent(input$launch_gform, {
-      s <- input$DT_abstracts_rows_selected
-      if(length(s) == 0)
-        return(NULL)
-      
-      this_submission <- abstract_table()[s, ]
-      this_id <- this_submission$Id
-      this_title <- this_submission$Title
-      
-      this_toclipboard <- paste(this_id, this_title, sep = "|")
-      clipr::write_clip(this_toclipboard)
-      showNotification(
-        paste0(
-          "Copying the id of the abstract to the clipboard... just paste it in the Google Form!",
-          this_toclipboard
-        ),
-        duration = 10, type = "message")
-    })
-    
     observeEvent(input$tour_assessr, {
       tour <- read.delim("tour_info.txt",
                          sep = ";", stringsAsFactors = FALSE,
@@ -212,4 +234,5 @@ library(rintrojs)
     
   }  
   
-  shinyApp(ui = assessr_ui, server = assessr_server)     
+  shinyApp(ui = assessr_ui, server = assessr_server)
+  
