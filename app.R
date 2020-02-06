@@ -176,7 +176,7 @@ window_open_erum <- function(id, type) {
       
       message("type: ", input$submissionType)
       message("form_id(): ", form_id)
-      message("open link string: ", open_link_string)
+ #     message("open link string: ", open_link_string)
       
       return(
         tagList(
@@ -219,7 +219,7 @@ window_open_erum <- function(id, type) {
         selection = list(mode = "single"),
         options = list(
           scrollX = TRUE,
-          pageLength = 10,
+          pageLength = 5,
           lengthMenu = c(5, 10, 25, 50, 100, nrow(current_dt()))
         )
       )
