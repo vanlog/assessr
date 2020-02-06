@@ -3,7 +3,8 @@ library(shinydashboard)
 library(clipr)
 library(rintrojs)
 
-assessr <- function(abstract_filename = "erum2020_sessions_for_reviewers.xlsx") {
+assessr <- function(abstract_filename = 
+                      "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx") {
   
   abstract_table <- readxl::read_excel(abstract_filename)
   
@@ -15,6 +16,9 @@ assessr <- function(abstract_filename = "erum2020_sessions_for_reviewers.xlsx") 
                         "Link",
                         "First time presenting this?",
                         "Speaker Notes")
+  
+  reviewers_names <- unique(c(abstract_table$Reviewer1, abstract_table$Reviewer2))
+  
   
   abstract_table_compact <- 
     abstract_table[, preselected_cols]
@@ -42,6 +46,14 @@ assessr <- function(abstract_filename = "erum2020_sessions_for_reviewers.xlsx") 
           selected =  preselected_cols, 
           multiple = TRUE
         ),
+        selectInput(
+          inputId = "reviewer",
+          label = "Reviewer name",
+          choices = c("All", reviewers_names),
+          selected =  "All", 
+          multiple = FALSE
+        ),
+        
         
         actionButton(
           inputId = "tour_assessr",
@@ -75,7 +87,11 @@ assessr <- function(abstract_filename = "erum2020_sessions_for_reviewers.xlsx") 
   assessr_server <- function(input, output, session) {
     
     current_dt <- reactive({
-      mydt <- abstract_table[, input$cols_abstract]
+      
+      mydt <- abstract_table[abstract_table$Reviewer1 %in% input$reviewer |
+                               abstract_table$Reviewer2 %in% input$reviewer |
+                              "All" %in% input$reviewer,
+                             input$cols_abstract]
       return(mydt)
     })
     
@@ -97,23 +113,23 @@ assessr <- function(abstract_filename = "erum2020_sessions_for_reviewers.xlsx") 
 
       return(
         tagList(
-          h4("Title: "),
-          tags$b(h3(this_title)),
+          h3("Title: "),
+          tags$b(h2(this_title)),
           h4("Contribution identifier: "),
           tags$p(paste(this_id, this_title, sep = "|")),
           h3("Abstract: "),
           tags$p(this_abstract),
-          h4("Track:"),
+          h3("Track:"),
           p(this_track),
-          h4("Format:"),
+          h3("Format:"),
           p(this_format),
-          h4("Keywords:"),
+          h3("Keywords:"),
           tags$b(this_keywords),
-          h4("Link:"),
+          h3("Link:"),
           p(this_link),
-          h4("First time presenting this?"), 
+          h3("First time presenting this?"), 
           p(ifelse(this_firsttime=="Checked",yes = "Yes", no = "No")),
-          h4("Speaker notes:"),
+          h3("Speaker notes:"),
           p(this_notes),
           
           shiny::actionButton(
@@ -173,4 +189,5 @@ assessr <- function(abstract_filename = "erum2020_sessions_for_reviewers.xlsx") 
   shinyApp(ui = assessr_ui, server = assessr_server)     
 }       
 
+assessr()
 
