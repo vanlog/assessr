@@ -3,13 +3,22 @@ library(shinydashboard)
 library(clipr)
 library(rintrojs)
 
-assessr <- function(abstract_filename = 
-                      "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx") {
+
+
+  workshop_path <- "./erum2020_sessions_allcontribs_fullinfo_onlyWorkshops.xlsx"
+  contribution_path <- "./erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx"
   
-  workshop_path <- "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx"
-  talk_path <- "./../erum2020_sessions_allcontribs_fullinfo_noWorkshops.xlsx"  
+  workshop_table <- readxl::read_excel(workshop_path)
+  contribution_table <- readxl::read_excel(contribution_path)
   
-  abstract_table <- readxl::read_excel(abstract_filename)
+  
+  reviewers_names <- unique(c(workshop_table$Reviewer1, workshop_table$Reviewer2))
+  
+  
+  abstract_table_compact <- 
+    workshop_table[, preselected_cols]
+  
+
   
   preselected_cols <- c("Id",
                         "Title",
@@ -20,11 +29,6 @@ assessr <- function(abstract_filename =
                         "First time presenting this?",
                         "Speaker Notes")
   
-  reviewers_names <- unique(c(abstract_table$Reviewer1, abstract_table$Reviewer2))
-  
-  
-  abstract_table_compact <- 
-    abstract_table[, preselected_cols]
   
   # UI definition -----------------------------------------------------------
   assessr_ui <- shinydashboard::dashboardPage(
@@ -45,14 +49,14 @@ assessr <- function(abstract_filename =
         selectInput(
           inputId = "submissionType",
           label = "Type of contribution",
-          choices = c("Workshops", "Talks and other sessions"),
+          choices = c("Workshops" = "workshop", "Talks and other sessions" = "contribution"),
           selected =  "Workshop", 
           multiple = FALSE
         ),
         selectInput(
           inputId = "cols_abstract",
           label = "Columns to display",
-          choices = colnames(abstract_table),
+          choices = colnames(workshop_table),
           selected =  preselected_cols, 
           multiple = TRUE
         ),
@@ -86,7 +90,7 @@ assessr <- function(abstract_filename =
         column(
           width = 6,
           hr(),
-          uiOutput("session_abstract"),
+          uiOutput("session_abstract")
         )
       )
     )
@@ -95,11 +99,23 @@ assessr <- function(abstract_filename =
   
   # Server definition -------------------------------------------------------
   assessr_server <- function(input, output, session) {
+
+    
+    
+    abstract_table <- reactive({
+      if (input$submissionType == "workshop") {
+        abstract_t <- workshop_table
+      } else if (input$submissionType == "contribution") {
+        abstract_t <- contribution_table
+      }
+      
+      abstract_t
+    })
     
     current_dt <- reactive({
       
-      mydt <- abstract_table[abstract_table$Reviewer1 %in% input$reviewer |
-                               abstract_table$Reviewer2 %in% input$reviewer |
+      mydt <- abstract_table()[abstract_table()$Reviewer1 %in% input$reviewer |
+                               abstract_table()$Reviewer2 %in% input$reviewer |
                               "All" %in% input$reviewer,
                              input$cols_abstract]
       return(mydt)
@@ -110,7 +126,7 @@ assessr <- function(abstract_filename =
       if(length(s) == 0)
         return(h3("Select an abstract from the table to display the full info"))
       
-      this_submission <- abstract_table[s, ]
+      this_submission <- abstract_table()[s, ]
       this_title <- this_submission$Title
       this_id <- this_submission$Id
       this_abstract <- this_submission$Description
@@ -173,7 +189,7 @@ assessr <- function(abstract_filename =
       if(length(s) == 0)
         return(NULL)
       
-      this_submission <- abstract_table[s, ]
+      this_submission <- abstract_table()[s, ]
       this_id <- this_submission$Id
       this_title <- this_submission$Title
       
@@ -197,7 +213,3 @@ assessr <- function(abstract_filename =
   }  
   
   shinyApp(ui = assessr_ui, server = assessr_server)     
-}       
-
-assessr()
-
