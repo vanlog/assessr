@@ -172,7 +172,7 @@ window_open_erum <- function(id, type) {
       this_id <- this_submission$Id
       this_title <- this_submission$Title
       
-      form_id <- paste(this_id, this_title, sep = "|")
+      form_id <- gsub( "'", "", paste(this_id, this_title, sep = "|"))
       
       message("type: ", input$submissionType)
       message("form_id(): ", form_id)
